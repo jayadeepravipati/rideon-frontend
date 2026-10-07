@@ -1,12 +1,13 @@
 import axios from "axios";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import './AdminDashboard.css';
-import { useNavigate } from "react-router-dom"; // Added this import
+import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [bikes, setBikes] = useState([]);
   const [users, setUsers] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [bikeData, setBikeData] = useState({
     name: "",
     type: "",
@@ -14,35 +15,27 @@ const AdminDashboard = () => {
     location: "",
     image: null
   });
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("role");
     navigate("/login");
   };
+
   const [activeSection, setActiveSection] = useState("dashboard");
   const [stats, setStats] = useState({
     totalBikes: 0,
     totalUsers: 0,
     totalOrders: 0
   });
+
   const availableLocations = [
     "Rajahmundry",
     "Vijayawada",
     "Visakhapatnam",
     "Hyderabad"
   ];
-  useEffect(() => {
-    fetchBikes();
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    setStats({
-      totalBikes: bikes.length,
-      totalUsers: users.length,
-totalOrders: bookings.length    });
-  }, [bikes, users, bookings]);
 
   const getAuthConfig = () => {
     const token = localStorage.getItem("token");
@@ -57,11 +50,11 @@ totalOrders: bookings.length    });
     };
   };
 
-  const fetchBikes = async () => {
+  const fetchBikes = useCallback(async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/bikes");
       console.log("Initial bike data:", res.data);
-      
+
       const bikesWithImages = await Promise.all(
         res.data.map(async bike => {
           try {
@@ -77,16 +70,16 @@ totalOrders: bookings.length    });
           }
         })
       );
-      
+
       console.log("Final bikes data:", bikesWithImages);
       setBikes(bikesWithImages);
     } catch (error) {
       console.error("Error fetching bikes:", error);
     }
-  };
+  }, []);
 
-const fetchUsers = useCallback(async () => {
-      try {
+  const fetchUsers = useCallback(async () => {
+    try {
       const response = await axios.get("http://localhost:5000/api/admin/users", getAuthConfig());
       setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
@@ -95,25 +88,34 @@ const fetchUsers = useCallback(async () => {
     }
   }, []);
 
-  const [bookings, setBookings] = useState([]);
+  useEffect(() => {
+    fetchBikes();
+    fetchUsers();
+  }, [fetchBikes, fetchUsers]);
 
-// Add this useEffect to fetch bookings
-useEffect(() => {
-  const fetchBookings = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/api/bookings');
-      setBookings(response.data);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
+  useEffect(() => {
+    setStats({
+      totalBikes: bikes.length,
+      totalUsers: users.length,
+      totalOrders: bookings.length
+    });
+  }, [bikes, users, bookings]);
+
+  // Fetch bookings when order management section is opened
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/bookings');
+        setBookings(response.data);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+      }
+    };
+
+    if (activeSection === "orderManage") {
+      fetchBookings();
     }
-  };
-  
-  if (activeSection === "orderManage") {
-    fetchBookings();
-  }
-}, [activeSection]);
-
-
+  }, [activeSection]);
 
   const handleImageChange = (e) => {
     setBikeData({
@@ -121,24 +123,20 @@ useEffect(() => {
       image: e.target.files[0]
     });
   };
+
   const sendWhatsAppMessage = (phone, message) => {
-    // Remove all non-digit characters
     const digitsOnly = phone.replace(/\D/g, '');
-    
-    // Add country code if missing (default to +91 for India)
-    const countryCode = '+91'; // Change this to your default country code
+    const countryCode = '+91';
     let formattedPhone = digitsOnly;
-    
-    // If number doesn't start with country code, add it
+
     if (!digitsOnly.startsWith(countryCode.replace('+', ''))) {
       formattedPhone = countryCode + digitsOnly;
     }
-    
-    // Create WhatsApp URL
+
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
-    
     window.open(whatsappUrl, '_blank');
   };
+
   const handleAddBike = async (e) => {
     e.preventDefault();
     const config = getAuthConfig();
@@ -154,8 +152,8 @@ useEffect(() => {
     }
 
     try {
-await axios.post(
-          "http://localhost:5000/api/bikes",
+      await axios.post(
+        "http://localhost:5000/api/bikes",
         formData,
         {
           ...config,
@@ -165,7 +163,7 @@ await axios.post(
           }
         }
       );
-      
+
       alert("Bike added successfully!");
       setBikeData({
         name: "",
@@ -215,37 +213,37 @@ await axios.post(
           <h2>Admin Panel</h2>
         </div>
         <nav className="sidebar-nav">
-          <button 
+          <button
             className={`sidebar-link ${activeSection === "dashboard" ? "active" : ""}`}
             onClick={() => setActiveSection("dashboard")}
           >
             Dashboard
           </button>
-          <button 
+          <button
             className={`sidebar-link ${activeSection === "addBike" ? "active" : ""}`}
             onClick={() => setActiveSection("addBike")}
           >
             Add Bike
           </button>
-          <button 
+          <button
             className={`sidebar-link ${activeSection === "manageBikes" ? "active" : ""}`}
             onClick={() => setActiveSection("manageBikes")}
           >
             Manage Bikes
           </button>
-          <button 
+          <button
             className={`sidebar-link ${activeSection === "manageUsers" ? "active" : ""}`}
             onClick={() => setActiveSection("manageUsers")}
           >
             Manage Users
           </button>
-          <button 
+          <button
             className={`sidebar-link ${activeSection === "orderManage" ? "active" : ""}`}
             onClick={() => setActiveSection("orderManage")}
           >
             Manage Orders
           </button>
-          <button 
+          <button
             className="sidebar-link logout-btn"
             onClick={handleLogout}
           >
@@ -303,7 +301,7 @@ await axios.post(
                 />
               </div>
               <div className="form-group">
-                <label>Price Per Day ($)</label>
+                <label>Price Per Day (₹)</label>
                 <input
                   type="number"
                   placeholder="Enter price per day"
@@ -347,47 +345,47 @@ await axios.post(
 
         {/* Manage Bikes Section */}
         {activeSection === "manageBikes" && (
-  <div className="list-section">
-    <h1>Manage Bikes</h1>
-    <div className="bike-grid">
-      {bikes.map(bike => (
-        <div key={bike._id} className="bike-card">
-          <div className="image-container">
-            {bike.image?.data ? (
-              <img 
-                src={`data:${bike.image.contentType};base64,${bike.image.data}`}
-                alt={bike.name}
-                className="bike-image"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = '/placeholder.jpg';
-                  console.error('Image load failed:', bike._id);
-                }}
-                onLoad={() => console.log('Image loaded:', bike._id)}
-              />
-            ) : (
-              <div className="image-placeholder">
-                <span>No Image</span>
-              </div>
-            )}
+          <div className="list-section">
+            <h1>Manage Bikes</h1>
+            <div className="bike-grid">
+              {bikes.map(bike => (
+                <div key={bike._id} className="bike-card">
+                  <div className="image-container">
+                    {bike.image?.data ? (
+                      <img
+                        src={`data:${bike.image.contentType};base64,${bike.image.data}`}
+                        alt={bike.name}
+                        className="bike-image"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/placeholder.jpg';
+                          console.error('Image load failed:', bike._id);
+                        }}
+                        onLoad={() => console.log('Image loaded:', bike._id)}
+                      />
+                    ) : (
+                      <div className="image-placeholder">
+                        <span>No Image</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="bike-details">
+                    <h3>{bike.name}</h3>
+                    <p><strong>Type:</strong> {bike.type}</p>
+                    <p><strong>Price:</strong> {bike.pricePerDay}/day</p>
+                    <p><strong>Location:</strong> {bike.location}</p>
+                    <button
+                      onClick={() => handleDeleteBike(bike._id)}
+                      className="delete-btn"
+                    >
+                      Delete Bike
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="bike-details">
-            <h3>{bike.name}</h3>
-            <p><strong>Type:</strong> {bike.type}</p>
-            <p><strong>Price:</strong> {bike.pricePerDay}/day</p>
-            <p><strong>Location:</strong> {bike.location}</p>
-            <button 
-              onClick={() => handleDeleteBike(bike._id)}
-              className="delete-btn"
-            >
-              Delete Bike
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+        )}
 
         {/* Manage Users Section */}
         {activeSection === "manageUsers" && (
@@ -406,7 +404,7 @@ await axios.post(
                     <tr key={user._id}>
                       <td>{user.email}</td>
                       <td>
-                        <button 
+                        <button
                           onClick={() => handleDeleteUser(user._id)}
                           className="delete-btn"
                         >
@@ -423,59 +421,59 @@ await axios.post(
 
         {/* Manage Orders Section */}
         {activeSection === "orderManage" && (
-  <div className="list-section">
-    <h1>Order Management</h1>
-    <table className="table">
-      <thead>
-        <tr>
-          <th>Bike</th>
-          <th>Customer</th>
-          <th>Phone</th>
-          <th>Dates</th>
-          <th>Booked On</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {bookings.map(booking => (
-          <tr key={booking._id}>
-            <td>
-              {booking.bikeName} ({booking.bikeType})<br />
-              ₹{booking.bikePrice}/day - {booking.bikeLocation}
-            </td>
-            <td>{booking.customerName}</td>
-            <td>{booking.customerPhone}</td>
-            <td>
-              {new Date(booking.fromDate).toLocaleDateString()} -<br />
-              {new Date(booking.toDate).toLocaleDateString()}
-            </td>
-            <td>{new Date(booking.bookingDate).toLocaleString()}</td>
-            <td>
-              <button 
-                className="btn btn-sm btn-success"
-                onClick={() => {
-                  const message = `Your booking for ${booking.bikeName} (₹${booking.bikePrice}/day) has been confirmed!`;
-                  sendWhatsAppMessage(booking.customerPhone, message);
-                }}
-              >
-                Confirm
-              </button>
-              <button 
-                className="btn btn-sm btn-danger ms-2"
-                onClick={() => {
-                  const message = `Sorry, your booking for ${booking.bikeName} has been cancelled.`;
-                  sendWhatsAppMessage(booking.customerPhone, message);
-                }}
-              >
-                Cancel
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-)}
+          <div className="list-section">
+            <h1>Order Management</h1>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Bike</th>
+                  <th>Customer</th>
+                  <th>Phone</th>
+                  <th>Dates</th>
+                  <th>Booked On</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bookings.map(booking => (
+                  <tr key={booking._id}>
+                    <td>
+                      {booking.bikeName} ({booking.bikeType})<br />
+                      ₹{booking.bikePrice}/day - {booking.bikeLocation}
+                    </td>
+                    <td>{booking.customerName}</td>
+                    <td>{booking.customerPhone}</td>
+                    <td>
+                      {new Date(booking.startDate).toLocaleDateString()} -<br />
+                      {new Date(booking.endDate).toLocaleDateString()}
+                    </td>
+                    <td>{new Date(booking.createdAt).toLocaleString()}</td>
+                    <td>
+                      <button
+                        className="btn btn-sm btn-success"
+                        onClick={() => {
+                          const message = `Your booking for ${booking.bikeName} (₹${booking.bikePrice}/day) has been confirmed!`;
+                          sendWhatsAppMessage(booking.customerPhone, message);
+                        }}
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger ms-2"
+                        onClick={() => {
+                          const message = `Sorry, your booking for ${booking.bikeName} has been cancelled.`;
+                          sendWhatsAppMessage(booking.customerPhone, message);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </main>
     </div>
   );
