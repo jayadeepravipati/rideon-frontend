@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from 'axios';
 import Modal from 'react-bootstrap/Modal';
@@ -19,7 +19,6 @@ const BikeList = () => {
     toDate: ''
   });
   const location = useLocation();
-  const navigate = useNavigate();
 
   // Extract query parameters
   const queryParams = new URLSearchParams(location.search);

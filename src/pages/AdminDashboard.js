@@ -7,7 +7,6 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [bikes, setBikes] = useState([]);
   const [users, setUsers] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [bikeData, setBikeData] = useState({
     name: "",
     type: "",
@@ -42,9 +41,8 @@ const AdminDashboard = () => {
     setStats({
       totalBikes: bikes.length,
       totalUsers: users.length,
-      totalOrders: orders.length
-    });
-  }, [bikes, users, orders]);
+totalOrders: bookings.length    });
+  }, [bikes, users, bookings]);
 
   const getAuthConfig = () => {
     const token = localStorage.getItem("token");
@@ -87,15 +85,15 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchUsers = async () => {
-    try {
+const fetchUsers = useCallback(async () => {
+      try {
       const response = await axios.get("http://localhost:5000/api/admin/users", getAuthConfig());
       setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Error fetching users:", error);
       setUsers([]);
     }
-  };
+  }, []);
 
   const [bookings, setBookings] = useState([]);
 
@@ -156,8 +154,8 @@ useEffect(() => {
     }
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/bikes",
+await axios.post(
+          "http://localhost:5000/api/bikes",
         formData,
         {
           ...config,
