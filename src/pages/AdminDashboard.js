@@ -52,13 +52,13 @@ const AdminDashboard = () => {
 
   const fetchBikes = useCallback(async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/bikes");
+      const res = await axios.get("https://rideon-backend-2.onrender.com/api/bikes");
       console.log("Initial bike data:", res.data);
 
       const bikesWithImages = await Promise.all(
         res.data.map(async bike => {
           try {
-            const bikeRes = await axios.get(`http://localhost:5000/api/bikes/${bike._id}/full`);
+            const bikeRes = await axios.get(`https://rideon-backend-2.onrender.com/api/bikes/${bike._id}/full`);
             console.log(`Bike ${bike._id} image data:`, !!bikeRes.data.image?.data);
             return bikeRes.data;
           } catch (error) {
@@ -80,7 +80,7 @@ const AdminDashboard = () => {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/users", getAuthConfig());
+      const response = await axios.get("https://rideon-backend-2.onrender.com/api/admin/users", getAuthConfig());
       setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -105,7 +105,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/bookings');
+        const response = await axios.get('https://rideon-backend-2.onrender.com/api/bookings');
         setBookings(response.data);
       } catch (error) {
         console.error('Error fetching bookings:', error);
@@ -153,7 +153,7 @@ const AdminDashboard = () => {
 
     try {
       await axios.post(
-        "http://localhost:5000/api/bikes",
+        "https://rideon-backend-2.onrender.com/api/bikes",
         formData,
         {
           ...config,
@@ -184,7 +184,7 @@ const AdminDashboard = () => {
     if (!config) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/bikes/${id}`, config);
+      await axios.delete(`https://rideon-backend-2.onrender.com/api/bikes/${id}`, config);
       fetchBikes();
     } catch (error) {
       console.error("Error deleting bike:", error);
@@ -197,7 +197,7 @@ const AdminDashboard = () => {
     if (!config) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/admin/users/${id}`, config);
+      await axios.delete(`https://rideon-backend-2.onrender.com/api/admin/users/${id}`, config);
       fetchUsers();
     } catch (error) {
       console.error("Error deleting user:", error);
