@@ -29,7 +29,7 @@ const BikeList = () => {
   useEffect(() => {
     const fetchBikes = async () => {
       try {
-        const basicResponse = await axios.get("http://localhost:5000/api/bikes");
+        const basicResponse = await axios.get("https://rideon-backend-2.onrender.com/api/bikes");
         const filteredBikes = city 
           ? basicResponse.data.filter(bike => 
               bike.location.toLowerCase() === city.toLowerCase()
